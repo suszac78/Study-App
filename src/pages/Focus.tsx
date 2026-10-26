@@ -3,11 +3,15 @@ import { Flower2, Play, Scissors, Sprout, Timer, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Quests, StreakLevel } from '../components/Motivation'
+import { RewardShop } from '../components/RewardShop'
 import { Plant } from '../components/Plant'
 import { Badge, Button, Card, Markdown, PageHead, ask, fadeUp, stagger, staggerItem } from '../components/ui'
 import { AiError, currentProvider, shredExcuse } from '../lib/ai'
 import { GRACE_SECONDS, endsAt, finishFocus, startFocus } from '../lib/focus'
-import { OFFLINE_SHREDS, dayKey, focusExam, randomNudge } from '../lib/motivation'
+import { OFFLINE_SHREDS, dayKey, focusExam } from '../lib/motivation'
+import { randomQuote } from '../lib/quotes'
+import { FREE_SHREDS_PER_DAY, freeShredsLeft, spend, tokenBalance } from '../lib/rewards'
+import { getDb } from '../lib/store'
 import { useDb } from '../lib/store'
 import { clock, formatDate } from '../lib/utils'
 
@@ -25,7 +29,8 @@ function Timer_() {
   const [minutes, setMinutes] = useState(25)
   const [label, setLabel] = useState('')
   const [examId, setExamId] = useState(() => focusExam(db)?.id ?? '')
-  const nudge = useMemo(randomNudge, [active?.id])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const nudge = useMemo(() => randomQuote(getDb()), [active?.id])
 
   useEffect(() => {
     if (!active) return
@@ -134,9 +139,15 @@ function ExcuseShredder({ autoFocus }: { autoFocus: boolean }) {
     return () => ctl.current?.abort()
   }, [autoFocus])
 
+  const free = freeShredsLeft(db)
+  const tokens = tokenBalance(db)
+  const locked = free === 0 && tokens < 1
+
   const shred = async () => {
     const text = excuse.trim()
-    if (!text || busy) return
+    if (!text || busy || locked) return
+    // Two free shreds a day, then each costs a token.
+    if (!spend('shred', free > 0 ? 0 : 1)) return
     setShredding(text)
     setExcuse('')
     setAnswer('')
@@ -161,7 +172,10 @@ function ExcuseShredder({ autoFocus }: { autoFocus: boolean }) {
         </div>
         <div className="stack sm">
           <h3>Excuse shredder</h3>
-          <span className="subtle">Procrastinating? Type your excuse. It gets shredded and you get one tiny task to start now.</span>
+          <span className="subtle">
+            Procrastinating? Type your excuse. It gets shredded and you get one tiny task to start now.{' '}
+            {free > 0 ? `${free} of ${FREE_SHREDS_PER_DAY} free today.` : locked ? 'Free shreds used up: study to earn a token.' : 'Costs 1 token now.'}
+          </span>
         </div>
       </div>
       <form
@@ -180,7 +194,7 @@ function ExcuseShredder({ autoFocus }: { autoFocus: boolean }) {
           onChange={(e) => setExcuse(e.target.value)}
           aria-label="Your excuse"
         />
-        <Button type="submit" variant="primary" disabled={!excuse.trim() || busy}>
+        <Button type="submit" variant="primary" disabled={!excuse.trim() || busy || locked}>
           <Scissors size={16} /> Shred it
         </Button>
       </form>
@@ -215,7 +229,14 @@ export default function Focus() {
   const db = useDb()
   const location = useLocation()
   const buster = !!(location.state as { buster?: boolean } | null)?.buster
-  const garden = useMemo(() => [...db.focusSessions].reverse(), [db.focusSessions])
+  const garden = useMemo(
+    () =>
+      [
+        ...db.focusSessions.map((s) => ({ kind: 'focus' as const, ts: s.endedAt, s })),
+        ...db.rewards.seeds.map((r) => ({ kind: 'seed' as const, ts: r.ts, r })),
+      ].sort((a, b) => b.ts - a.ts),
+    [db.focusSessions, db.rewards.seeds],
+  )
   const today = dayKey(Date.now())
   const todayMin = db.focusSessions.filter((s) => s.status === 'grown' && dayKey(s.endedAt) === today).reduce((s, x) => s + x.minutes, 0)
   const totalMin = db.focusSessions.filter((s) => s.status === 'grown').reduce((s, x) => s + x.minutes, 0)
@@ -239,6 +260,8 @@ export default function Focus() {
 
       <ExcuseShredder autoFocus={buster} />
 
+      <RewardShop />
+
       <section className="stack">
         <div className="row between">
           <h2 className="row" style={{ gap: 8 }}>
@@ -258,15 +281,29 @@ export default function Focus() {
           </Card>
         ) : (
           <motion.div className="garden" variants={stagger} initial="initial" animate="animate">
-            {garden.slice(0, 60).map((s) => (
-              <motion.div key={s.id} className="garden-plot" variants={staggerItem} title={`${s.label || 'Focus'} · ${s.minutes} min${s.status === 'withered' ? ' · withered' : ''}`}>
-                <Plant progress={1} withered={s.status === 'withered'} seed={s.seed} minutes={s.minutes} size={64} />
-                <span className="xs" style={{ fontWeight: 600 }}>
-                  <Timer size={11} style={{ verticalAlign: -1 }} /> {s.minutes}m
-                </span>
-                <span className="subtle" style={{ fontSize: '0.68rem' }}>{formatDate(dayKey(s.endedAt))}</span>
-              </motion.div>
-            ))}
+            {garden.slice(0, 80).map((g) =>
+              g.kind === 'focus' ? (
+                <motion.div key={g.s.id} className="garden-plot" variants={staggerItem} title={`${g.s.label || 'Focus'} · ${g.s.minutes} min${g.s.status === 'withered' ? ' · withered' : ''}`}>
+                  <Plant progress={1} withered={g.s.status === 'withered'} seed={g.s.seed} minutes={g.s.minutes} size={64} />
+                  <span className="xs" style={{ fontWeight: 600 }}>
+                    <Timer size={11} style={{ verticalAlign: -1 }} /> {g.s.minutes}m
+                  </span>
+                  <span className="subtle" style={{ fontSize: '0.68rem' }}>{formatDate(dayKey(g.s.endedAt))}</span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key={g.r.id}
+                  className="garden-plot"
+                  variants={staggerItem}
+                  title={`${g.r.name} (${g.r.rarity})`}
+                  style={g.r.rarity !== 'common' ? { borderColor: g.r.rarity === 'legendary' ? 'var(--accent)' : 'var(--highlight)' } : undefined}
+                >
+                  <Plant progress={1} seed={g.r.seed} minutes={g.r.rarity === 'common' ? 25 : 60} rarity={g.r.rarity} size={64} />
+                  <span className="xs" style={{ fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>{g.r.name}</span>
+                  <span className="subtle" style={{ fontSize: '0.68rem', textTransform: 'capitalize' }}>{g.r.rarity}</span>
+                </motion.div>
+              ),
+            )}
           </motion.div>
         )}
       </section>

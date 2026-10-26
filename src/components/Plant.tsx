@@ -1,13 +1,15 @@
 import { motion } from 'motion/react'
+import type { Rarity } from '../lib/types'
 
 /**
  * A potted plant that grows with `progress` (0..1). Longer sessions grow
  * bigger plants with more leaves and blooms; a withered plant droops brown.
  */
-export function Plant({ progress, withered = false, seed = 1, minutes = 25, size = 120 }: { progress: number; withered?: boolean; seed?: number; minutes?: number; size?: number }) {
+export function Plant({ progress, withered = false, seed = 1, minutes = 25, size = 120, rarity }: { progress: number; withered?: boolean; seed?: number; minutes?: number; size?: number; rarity?: Rarity }) {
   const p = Math.max(0, Math.min(1, progress))
   const hue = Math.round((seed * 137.5) % 360)
-  const petal = withered ? 'var(--wither)' : `hsl(${hue} 80% 65%)`
+  const petalFor = (i: number) =>
+    withered ? 'var(--wither)' : rarity === 'legendary' ? `hsl(${(hue + i * 72) % 360} 90% 62%)` : rarity === 'rare' ? `hsl(${44 + i * 3} 95% ${55 + (i % 2) * 8}%)` : `hsl(${hue} 80% 65%)`
   const leaf = withered ? 'var(--wither)' : 'var(--leaf)'
   const tall = minutes >= 45 ? 72 : minutes >= 25 ? 62 : 48
   const stemH = 6 + tall * p
@@ -61,12 +63,29 @@ export function Plant({ progress, withered = false, seed = 1, minutes = 25, size
           return (
             <motion.g key={b} initial={{ scale: 0, rotate: -40 }} animate={{ scale: withered ? 0.7 : 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 12, delay: b * 0.15 }} style={{ transformOrigin: `${cx}px ${cy}px` }}>
               {[0, 72, 144, 216, 288].map((a) => (
-                <ellipse key={a} cx={cx} cy={cy - 7} rx="4.5" ry="8" fill={petal} transform={`rotate(${a} ${cx} ${cy})`} />
+                <ellipse key={a} cx={cx} cy={cy - 7} rx="4.5" ry="8" fill={petalFor(a / 72)} transform={`rotate(${a} ${cx} ${cy})`} />
               ))}
               <circle cx={cx} cy={cy} r="4" fill={withered ? 'var(--text-3)' : 'var(--highlight)'} />
             </motion.g>
           )
         })}
+      {/* sparkles for rare plants */}
+      {rarity && rarity !== 'common' && !withered &&
+        [
+          [28, 30],
+          [92, 22],
+          [96, 70],
+          [24, 78],
+        ].map(([x, y], i) => (
+          <motion.path
+            key={i}
+            d={`M${x} ${y - 5} L${x + 1.5} ${y - 1.5} L${x + 5} ${y} L${x + 1.5} ${y + 1.5} L${x} ${y + 5} L${x - 1.5} ${y + 1.5} L${x - 5} ${y} L${x - 1.5} ${y - 1.5} Z`}
+            fill={rarity === 'legendary' ? 'var(--accent)' : 'var(--highlight)'}
+            animate={{ opacity: [0.2, 1, 0.2], scale: [0.7, 1.1, 0.7] }}
+            transition={{ duration: 1.8, repeat: Infinity, delay: i * 0.4 }}
+            style={{ transformOrigin: `${x}px ${y}px` }}
+          />
+        ))}
       {/* sprout tip before blooming */}
       {p < 1 && !withered && <circle cx="60" cy={top} r="3" fill={leaf} />}
       {/* pot */}

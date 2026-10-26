@@ -19,6 +19,8 @@ const emptyDb = (): Db => ({
   chats: {},
   focusSessions: [],
   activeFocus: null,
+  rewards: { spends: [], seeds: [], bestSpeed: 0 },
+  motivation: { goal: '', custom: [], ai: [], builtIn: true },
 })
 
 export const defaultSettings: Settings = {

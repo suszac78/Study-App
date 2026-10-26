@@ -1,6 +1,7 @@
 import { Download, Eye, EyeOff, KeyRound, Monitor, Moon, Sparkles, Sun, Trash2, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useAiStatus } from '../components/Layout'
+import { MotivationSettings } from '../components/MotivationSettings'
 import { Button, Card, PageHead, ask, toast } from '../components/ui'
 import { getDownloads } from '../lib/runtime'
 import { getDb, replaceDb, resetDb, updateSettings, useSettings } from '../lib/store'
@@ -171,6 +172,8 @@ export default function Settings() {
           </div>
         </details>
       </Card>
+
+      <MotivationSettings />
 
       <Card className="stack">
         <h3>Appearance</h3>

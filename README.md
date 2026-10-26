@@ -15,6 +15,8 @@ An AI study companion. Add your exam notification and your notes (or a whole Can
 - **AI tutor**: a streaming chat that knows your exam and your notes.
 - **Progress**: score trend, topic mastery and history.
 - **Focus garden (anti-procrastination)**: a focus timer that grows a plant while you study anywhere in the app; leave the app for more than 60 seconds and it withers. Finished sessions fill your garden. Daily streak, XP and levels (with titles), three daily quests, and an "Excuse shredder" that roasts your excuse and gives you one tiny task to start right now.
+- **Earned fun**: the fun parts cost tokens, and tokens only come from studying (1 per 15 focus minutes, per finished quiz/test, per 15 flashcards reviewed; 2 to start). Spend them on a 60-second Speed round built from your own flashcards, or a Mystery seed (common/rare/legendary plant). The excuse shredder is free twice a day, then costs a token.
+- **Motivation & quotes** (Settings): write what you're working towards (e.g. "good grades = new PC") and the AI turns it into personal quotes; add your own; toggle the built-in ones. Quotes appear on the home screen, during focus sessions and after quizzes.
 - Light/dark themes, mobile layout, keyboard shortcuts in quizzes, reduced-motion support, backup export/import.
 
 ## How the AI works (no API key needed on claude.ai)

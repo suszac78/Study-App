@@ -14,6 +14,7 @@ import {
   FlashcardsSchema,
   OrganizedNoteSchema,
   QuizSchema,
+  QuotesSchema,
   TipsSchema,
   type AIQuestion,
   type ExamTips,
@@ -529,6 +530,27 @@ ${tips ? `Their current study plan and tips:\n${planText(tips)}` : 'They have no
 
 Be specific to their exam, dates and scores. Keep answers practical and fairly short. When you suggest changes to their plan, say exactly what changes; the app has an "Update my plan" button that rewrites the plan using this conversation.`)
   return streamChat(rules, history, onText, signal)
+}
+
+/** Personal motivational quotes built around what the student is working towards. */
+export function generateQuotes(goal: string, exam: Exam | null, opts?: CallOptions) {
+  return generate(
+    {
+      schema: QuotesSchema,
+      instructions: `Write 10 short, original motivational lines for a student, built around their own goal and reward.
+${exam ? `They are preparing for: ${exam.name}${exam.examDate ? ` on ${exam.examDate}` : ''}.` : ''}
+
+Rules:
+- Each line under 120 characters, punchy, specific to their goal; make it feel personal and fun.
+- Mix styles: hype, gentle tough love, funny, calm.
+- Tie studying now to getting the reward (good grades lead to the reward).
+- No quotation marks, no emoji, no hashtags, and never attribute a line to a real person.`,
+      source: { text: goal, files: [] },
+      request: 'Write my motivational lines.',
+      maxTokens: 4000,
+    },
+    opts,
+  )
 }
 
 /** "Excuse shredder": funny tough love plus one tiny task to start right now. */

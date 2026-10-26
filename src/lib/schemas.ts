@@ -101,6 +101,10 @@ export const FeedbackSchema = z.object({
 })
 export type AttemptFeedback = z.infer<typeof FeedbackSchema>
 
+export const QuotesSchema = z.object({
+  quotes: z.array(z.string()),
+})
+
 export const FlashcardsSchema = z.object({
   cards: z.array(z.object({ front: z.string(), back: z.string(), topic: z.string() })),
 })

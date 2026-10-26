@@ -122,4 +122,36 @@ export interface Db {
   chats: Record<string, ChatMessage[]>
   focusSessions: FocusSession[]
   activeFocus: ActiveFocus | null
+  rewards: Rewards
+  motivation: Motivation
+}
+
+/** A token spent (cost 1) or a free use (cost 0) of a fun feature. */
+export interface Spend {
+  ts: number
+  item: 'speed' | 'seed' | 'shred'
+  cost: number
+}
+
+export type Rarity = 'common' | 'rare' | 'legendary'
+
+export interface RareSeed {
+  id: string
+  ts: number
+  rarity: Rarity
+  name: string
+  seed: number
+}
+
+export interface Rewards {
+  spends: Spend[]
+  seeds: RareSeed[]
+  bestSpeed: number
+}
+
+export interface Motivation {
+  goal: string
+  custom: string[]
+  ai: string[]
+  builtIn: boolean
 }

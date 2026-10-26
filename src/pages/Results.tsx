@@ -3,6 +3,7 @@ import { MessageCircle, RotateCcw, Sparkles, Target, TrendingUp } from 'lucide-r
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { QuestionView } from '../components/QuestionView'
+import { QuoteCard } from '../components/Quote'
 import { AiWorking, Button, Card, ErrorAlert, Meter, Ring, stagger, staggerItem, useAiTask } from '../components/ui'
 import { generateFeedback, sameSet, topicStats } from '../lib/ai'
 import { updateDb, useDb } from '../lib/store'
@@ -79,6 +80,10 @@ export default function Results() {
           )}
         </Card>
       </motion.div>
+
+      <div className="card tight flat">
+        <QuoteCard compact />
+      </div>
 
       {topics.length > 0 && (
         <Card className="stack">
