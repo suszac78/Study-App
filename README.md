@@ -25,6 +25,13 @@ StudyPilot supports two AI connections and picks one automatically:
 
 All your data (exams, notes, quizzes, results) is stored locally in your browser (IndexedDB). Use **Settings → Export backup** to keep a copy.
 
+## Publishing on GitHub Pages
+
+The workflow in `.github/workflows/deploy-pages.yml` builds the app and publishes it on every push.
+One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+The site is then at `https://<your-username>.github.io/Study-App/`. On GitHub Pages there is no built-in Claude,
+so add an Anthropic API key in the app's Settings to use the AI features (everything else works without one).
+
 ## Development
 
 ```bash
