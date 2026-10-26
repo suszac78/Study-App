@@ -14,6 +14,7 @@ An AI study companion. Add your exam notification and your notes (or a whole Can
 - **Tips and study plan**: a day-by-day or week-by-week plan to exam day, priority topics, time management, common mistakes and an exam-day checklist, based on your progress.
 - **AI tutor**: a streaming chat that knows your exam and your notes.
 - **Progress**: score trend, topic mastery and history.
+- **Focus garden (anti-procrastination)**: a focus timer that grows a plant while you study anywhere in the app; leave the app for more than 60 seconds and it withers. Finished sessions fill your garden. Daily streak, XP and levels (with titles), three daily quests, and an "Excuse shredder" that roasts your excuse and gives you one tiny task to start right now.
 - Light/dark themes, mobile layout, keyboard shortcuts in quizzes, reduced-motion support, backup export/import.
 
 ## How the AI works (no API key needed on claude.ai)

@@ -7,6 +7,7 @@ import { useSettings } from './lib/store'
 import Dashboard from './pages/Dashboard'
 import ExamLayout from './pages/ExamLayout'
 import Flashcards from './pages/Flashcards'
+import Focus from './pages/Focus'
 import NewExam from './pages/NewExam'
 import NoteNew from './pages/NoteNew'
 import NoteView from './pages/NoteView'
@@ -46,6 +47,7 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="new" element={<NewExam />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="focus" element={<Focus />} />
             <Route path="exam/:examId" element={<ExamLayout />}>
               <Route index element={<Overview />} />
               <Route path="notes" element={<NotesList />} />

@@ -39,6 +39,10 @@
   --board: #173a32;
   --board-2: #0f2a24;
   --on-board: #f3f1e6;
+  --leaf: #2f9e5b;
+  --wither: #9a7b4f;
+  --pot: #c8643b;
+  --pot-rim: #a94f2c;
   --success: #12a46b;
   --success-soft: rgba(18, 164, 107, 0.12);
   --danger: #e5484d;
@@ -76,6 +80,10 @@
     --board: #12302a;
     --board-2: #0a1d19;
     --on-board: #f3f1e6;
+    --leaf: #4cc47e;
+    --wither: #a88a5c;
+    --pot: #b8582f;
+    --pot-rim: #94431f;
     --success: #34d399;
     --success-soft: rgba(52, 211, 153, 0.14);
     --danger: #ff6b70;
@@ -113,6 +121,10 @@
   --board: #12302a;
   --board-2: #0a1d19;
   --on-board: #f3f1e6;
+  --leaf: #4cc47e;
+  --wither: #a88a5c;
+  --pot: #b8582f;
+  --pot-rim: #94431f;
   --success: #34d399;
   --success-soft: rgba(52, 211, 153, 0.14);
   --danger: #ff6b70;
@@ -823,3 +835,20 @@ a.list-item:hover { text-decoration: none; background: var(--primary-soft); bord
     background: var(--surface-solid);
   }
 }
+
+/* ---------- Focus garden ---------- */
+
+.focus-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: center; }
+@media (max-width: 760px) { .focus-stage { grid-template-columns: minmax(0, 1fr); } }
+.focus-clock { font-family: var(--font-display); font-weight: 800; font-size: clamp(3rem, 2rem + 5vw, 5.5rem); letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.plant-stage { display: grid; place-items: center; padding: 12px; border-radius: 24px; background: radial-gradient(70% 60% at 50% 70%, var(--primary-soft), transparent 70%); }
+.garden { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; }
+.garden-plot { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 10px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border); }
+.flame { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: 800; }
+.quest { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--border); color: inherit; }
+.quest:last-child { border-bottom: 0; }
+a.quest:hover { text-decoration: none; background: var(--primary-soft); border-radius: 12px; }
+.quest.done .q-label { text-decoration: line-through; color: var(--text-3); }
+.away-banner { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--warning-soft); border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent); font-size: var(--fs-sm); }
+.shred-strip { height: 10px; border-radius: 2px; background: var(--surface-2); border: 1px solid var(--border); }
+.confetti { position: fixed; top: 40%; left: 50%; width: 10px; height: 14px; border-radius: 2px; pointer-events: none; z-index: 150; }

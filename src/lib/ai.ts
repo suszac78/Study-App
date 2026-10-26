@@ -531,6 +531,16 @@ Be specific to their exam, dates and scores. Keep answers practical and fairly s
   return streamChat(rules, history, onText, signal)
 }
 
+/** "Excuse shredder": funny tough love plus one tiny task to start right now. */
+export function shredExcuse(excuse: string, exam: Exam | null, onText: (t: string) => void, signal?: AbortSignal) {
+  const rules = chatRules(`The student is procrastinating and just typed their excuse for not studying.
+${exam ? examContext(exam) : 'They have not set up an exam yet.'}
+Today is ${today()}.${exam?.examDate ? ` Exam date: ${exam.examDate}.` : ''}
+
+Reply in at most 3 short sentences: playfully roast the excuse (witty, warm, never mean, never about their worth), then give ONE concrete task they can start in the next 60 seconds that takes 5-15 minutes, using their exam topics where you can. No headings or lists. End with a short punchy call to action.`)
+  return streamChat(rules, [{ id: 'x', role: 'user', text: excuse }], onText, signal)
+}
+
 // ---------- scoring helpers (shared by UI) ----------
 
 export function sameSet(a: number[], b: number[]) {

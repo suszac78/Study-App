@@ -71,6 +71,31 @@ export interface Flashcard {
   topic: string
   box: number // 1..5 Leitner box
   due: number
+  lastReviewed?: number
+}
+
+export interface FocusSession {
+  id: string
+  examId: string | null
+  label: string
+  minutes: number
+  startedAt: number
+  endedAt: number
+  status: 'grown' | 'withered'
+  awaySeconds: number
+  seed: number
+}
+
+/** The focus session in progress (kept so a reload doesn't lose it). */
+export interface ActiveFocus {
+  id: string
+  examId: string | null
+  label: string
+  minutes: number
+  startedAt: number
+  awayMs: number
+  lastSeen: number
+  seed: number
 }
 
 export interface TipsEntry {
@@ -95,4 +120,6 @@ export interface Db {
   flashcards: Flashcard[]
   tips: TipsEntry[]
   chats: Record<string, ChatMessage[]>
+  focusSessions: FocusSession[]
+  activeFocus: ActiveFocus | null
 }

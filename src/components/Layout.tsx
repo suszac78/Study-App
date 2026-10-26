@@ -1,7 +1,9 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { GraduationCap, Home, Plus, Settings as SettingsIcon } from 'lucide-react'
+import { Flower2, GraduationCap, Home, Plus, Settings as SettingsIcon } from 'lucide-react'
 import { Link, NavLink, useLocation, useOutlet } from 'react-router-dom'
 import { currentProvider } from '../lib/ai'
+import { FocusGuard } from './FocusGuard'
+import { StreakBadge, useMotivation } from './Motivation'
 import { useRuntime } from '../lib/runtime'
 import { useDb, useSaveError, useSettings } from '../lib/store'
 import { daysUntil, examColor } from '../lib/utils'
@@ -47,6 +49,7 @@ export function Layout() {
   const saveError = useSaveError()
   const location = useLocation()
   const outlet = useOutlet()
+  const { streak } = useMotivation()
   const topKey = location.pathname.split('/').slice(0, 3).join('/')
 
   return (
@@ -59,6 +62,10 @@ export function Layout() {
           </NavLink>
           <NavLink to="/new" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
             <Plus size={18} /> New exam
+          </NavLink>
+          <NavLink to="/focus" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <Flower2 size={18} /> <span className="grow">Focus garden</span>
+            <StreakBadge days={streak.days} activeToday={streak.activeToday} />
           </NavLink>
         </nav>
         {db.exams.length > 0 && (
@@ -118,10 +125,14 @@ export function Layout() {
         <NavLink to="/new" className={({ isActive }) => (isActive ? 'active' : '')}>
           <Plus size={20} /> New exam
         </NavLink>
+        <NavLink to="/focus" className={({ isActive }) => (isActive ? 'active' : '')}>
+          <Flower2 size={20} /> Focus
+        </NavLink>
         <NavLink to="/settings" className={({ isActive }) => (isActive ? 'active' : '')}>
           <SettingsIcon size={20} /> Settings
         </NavLink>
       </nav>
+      <FocusGuard />
     </div>
   )
 }

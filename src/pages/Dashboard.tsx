@@ -9,11 +9,14 @@ import {
   Lightbulb,
   MessageCircle,
   Plus,
+  Scissors,
+  Sprout,
   Timer,
 } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAiStatus } from '../components/Layout'
+import { Quests, StreakLevel } from '../components/Motivation'
 import { Badge, Button, Card, Meter, stagger, staggerItem } from '../components/ui'
 import { sameSet } from '../lib/ai'
 import { useDb } from '../lib/store'
@@ -91,6 +94,20 @@ export default function Dashboard() {
           </div>
         </div>
       </motion.section>
+
+      <Card className="stack lg" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <StreakLevel />
+        <hr className="divider" />
+        <Quests />
+        <div className="row">
+          <Button variant="primary" onClick={() => navigate('/focus')}>
+            <Sprout size={16} /> Start a focus session
+          </Button>
+          <Button variant="secondary" onClick={() => navigate('/focus', { state: { buster: true } })}>
+            <Scissors size={16} /> I'm procrastinating
+          </Button>
+        </div>
+      </Card>
 
       {provider === 'none' && (
         <div className="alert warn">

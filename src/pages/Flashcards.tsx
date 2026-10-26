@@ -41,7 +41,7 @@ export default function Flashcards() {
     if (!current || !queue) return
     const box = good ? Math.min(current.box + 1, 5) : 1
     const due = good ? Date.now() + INTERVAL_DAYS[box] * 86_400_000 : Date.now()
-    updateDb((d) => ({ ...d, flashcards: d.flashcards.map((c) => (c.id === current.id ? { ...c, box, due } : c)) }))
+    updateDb((d) => ({ ...d, flashcards: d.flashcards.map((c) => (c.id === current.id ? { ...c, box, due, lastReviewed: Date.now() } : c)) }))
     setFlipped(false)
     setDone((n) => n + 1)
     // "Again" puts the card back near the end of this session.

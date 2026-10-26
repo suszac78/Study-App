@@ -17,6 +17,8 @@ const emptyDb = (): Db => ({
   flashcards: [],
   tips: [],
   chats: {},
+  focusSessions: [],
+  activeFocus: null,
 })
 
 export const defaultSettings: Settings = {
