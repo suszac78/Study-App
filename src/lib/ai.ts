@@ -156,7 +156,7 @@ async function generate<S extends z.ZodType>(args: GenerateArgs<S>, opts: CallOp
         if (images.length > max) throw new AiError('other', `Attach at most ${max} images at a time.`)
       }
       if (sourceText.length > SAMPLE_TEXT_BUDGET) {
-        throw new AiError('too-large', `That material is about ${Math.round(sourceText.length / 1000)}k characters. Split it into parts under ${SAMPLE_TEXT_BUDGET / 1000}k and add them one at a time.`)
+        throw new AiError('too-large', `That material is about ${Math.round(sourceText.length / 1000)}k characters. For a whole book or course, use Notes → Import course, which splits it into chapters. Otherwise split it into parts under ${SAMPLE_TEXT_BUDGET / 1000}k.`)
       }
       const schema = JSON.stringify(z.toJSONSchema(args.schema))
       const prompt = [

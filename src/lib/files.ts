@@ -1,6 +1,6 @@
 import type { BetaContentBlockParam } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 
-export const ACCEPTED_FILES = '.pdf,.docx,.pptx,.html,.htm,.txt,.md,.markdown,.csv,.png,.jpg,.jpeg,.webp,.gif'
+export const ACCEPTED_FILES = '.pdf,.epub,.docx,.pptx,.html,.htm,.txt,.md,.markdown,.csv,.png,.jpg,.jpeg,.webp,.gif'
 export const MAX_FILE_MB = 30
 
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'] as const
@@ -18,6 +18,10 @@ export function imageType(file: File): ImageType | null {
 /** Word, PowerPoint and HTML files are turned into text in the browser. */
 async function officeOrHtmlText(file: File): Promise<string | null> {
   const n = file.name.toLowerCase()
+  if (n.endsWith('.epub')) {
+    const { epubToText } = await import('./epub')
+    return epubToText(new Uint8Array(await file.arrayBuffer()), file.name)
+  }
   if (!/\.(docx|pptx|html?)$/.test(n)) return null
   const { extractText } = await import('./course')
   return extractText(n, new Uint8Array(await file.arrayBuffer()))

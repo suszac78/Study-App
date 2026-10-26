@@ -152,15 +152,16 @@ export default function CourseImport() {
           <div className="stack sm grow">
             <h2>Import a whole course</h2>
             <p className="subtle">
-              Works with a Canvas course export (.imscc), a .zip of course files, or a folder. StudyPilot reads pages, PDFs, Word,
-              PowerPoint and quiz questions, grouped by module.
+              Add your course EPUB books (one or several at once), a Canvas course export (.imscc), a .zip, or a folder. Each book chapter or
+              course module becomes its own set of notes. PDFs, Word, PowerPoint and quiz questions are read too.
             </p>
           </div>
         </div>
 
         <details className="small">
-          <summary style={{ cursor: 'pointer', fontWeight: 600 }}>How do I download my course from Canvas?</summary>
+          <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Where do I get these files?</summary>
           <ol className="muted" style={{ marginTop: 8, paddingLeft: 20 }}>
+            <li><strong>EPUB course books:</strong> download each .epub from Canvas (or your course's book link) and drop them all here together. Books locked to an e-reader app (DRM) can't be read; StudyPilot will tell you if one is.</li>
             <li>Open the course in Canvas and go to <strong>Settings → Export Course Content</strong>, choose <strong>Course</strong>, then <strong>Create Export</strong>. Download the .imscc file when it's ready.</li>
             <li>If you're a student and don't see Settings: open <strong>Files</strong>, select everything and choose <strong>Download</strong> (a .zip), or use <strong>Download Course Content</strong> in the course menu if your school has it turned on.</li>
             <li>You can also add a .zip from any other learning platform, or a folder of slides and PDFs.</li>
@@ -186,10 +187,10 @@ export default function CourseImport() {
         >
           <div className="stack sm" style={{ alignItems: 'center' }}>
             <PackageOpen size={26} color="var(--primary)" />
-            <strong>Drop your course export here</strong>
-            <span className="hint">.imscc or .zip · or many files at once</span>
+            <strong>Drop your course EPUBs or export here</strong>
+            <span className="hint">.epub, .imscc or .zip · several files at once is fine</span>
           </div>
-          <input ref={fileRef} type="file" multiple hidden accept=".imscc,.zip,.pdf,.docx,.pptx,.html,.htm,.txt,.md" onChange={(e) => { read(Array.from(e.target.files ?? [])); e.target.value = '' }} />
+          <input ref={fileRef} type="file" multiple hidden accept=".epub,.imscc,.zip,.pdf,.docx,.pptx,.html,.htm,.txt,.md" onChange={(e) => { read(Array.from(e.target.files ?? [])); e.target.value = '' }} />
         </div>
         <div className="row">
           <Button variant="ghost" size="sm" onClick={() => folderRef.current?.click()}>
@@ -216,8 +217,11 @@ export default function CourseImport() {
                 <div className="stack sm">
                   <span className="eyebrow">Found</span>
                   <h2>{course.title}</h2>
+                  {course.warnings.length > 0 && (
+                    <div className="alert warn" role="alert"><span>{course.warnings.join(' ')}</span></div>
+                  )}
                   <span className="subtle">
-                    {course.modules.length} modules · {course.modules.reduce((s, m) => s + m.items.length, 0)} items
+                    {course.modules.length} sections · {course.modules.reduce((s, m) => s + m.items.length, 0)} items
                     {course.skipped > 0 && ` · ${course.skipped} files had no readable text (scans, images or media)`}
                   </span>
                 </div>

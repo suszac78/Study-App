@@ -105,8 +105,8 @@ export default function NewExam() {
               <div className="row nowrap" style={{ gap: 12 }}>
                 <div className="feature-icon"><PackageOpen size={20} /></div>
                 <div className="stack sm">
-                  <strong>Studying a Canvas course?</strong>
-                  <span className="subtle">Import the whole course export: modules, pages, PDFs, slides and quizzes.</span>
+                  <strong>Have the whole course as EPUBs or a Canvas export?</strong>
+                  <span className="subtle">Import every book chapter or course module at once.</span>
                 </div>
               </div>
               <Button variant="secondary" onClick={importCourse}>Import a course</Button>

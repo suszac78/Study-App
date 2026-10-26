@@ -48,12 +48,12 @@ export default function NotesList() {
               <Plus size={16} /> Add notes
             </Button>
             <Button variant="secondary" onClick={() => navigate('import')}>
-              <PackageOpen size={16} /> Import a Canvas course
+              <PackageOpen size={16} /> Import course (EPUB / Canvas)
             </Button>
           </div>
         }
       >
-        Paste notes, upload PDFs, Word, slides or photos of handwritten pages, or import a whole course export. The AI turns them into clean
+        Paste notes, upload PDFs, Word, slides or photos of handwritten pages, or import whole course EPUBs or a Canvas export. The AI turns them into clean
         notes, flashcards and exam tips.
       </Empty>
     )

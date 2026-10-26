@@ -23,6 +23,7 @@ export interface ParsedCourse {
   syllabus: string
   modules: CourseModule[]
   skipped: number
+  warnings: string[]
 }
 
 type Loader = () => Promise<Uint8Array>
@@ -241,10 +242,66 @@ function parseManifest(xml: Uint8Array) {
 
 // ---------- main ----------
 
+const isEpub = (name: string) => /\.epub$/i.test(name)
+
+/** EPUB books packed inside .zip files, pulled out as separate files. */
+async function epubsInsideZips(inputs: File[]): Promise<File[]> {
+  const out: File[] = []
+  for (const f of inputs) {
+    if (!/\.zip$/i.test(f.name)) continue
+    const inner = unzipSync(new Uint8Array(await f.arrayBuffer()), { filter: (e) => isEpub(e.name) })
+    for (const [name, data] of Object.entries(inner)) out.push(new File([data as BlobPart], name.split('/').pop() ?? name))
+  }
+  return out
+}
+
+/**
+ * Reads EPUB books, a Canvas export (.imscc), zips or a folder of course files.
+ * Each EPUB chapter becomes a module; several books can be imported together.
+ */
 export async function parseCourse(inputs: File[], onStatus: (s: string) => void): Promise<ParsedCourse> {
   onStatus('Unpacking files…')
+  const zippedEpubs = await epubsInsideZips(inputs)
+  const epubs = [...inputs.filter((f) => isEpub(f.name)), ...zippedEpubs]
+  if (!epubs.length) return parseCourseFiles(inputs, onStatus)
+
+  const { parseEpub } = await import('./epub')
+  const modules: CourseModule[] = []
+  const titles: string[] = []
+  const warnings: string[] = []
+  let skipped = 0
+  for (const f of epubs) {
+    try {
+      const book = parseEpub(new Uint8Array(await f.arrayBuffer()), f.name, onStatus)
+      titles.push(book.title)
+      skipped += book.skipped
+      modules.push(...book.modules.map((m) => (epubs.length > 1 ? { ...m, title: `${book.title}: ${m.title}` } : m)))
+    } catch (e) {
+      warnings.push(e instanceof Error ? e.message : `Could not read ${f.name}.`)
+    }
+  }
+  // Other files picked alongside the books (zips without books are read too).
+  const rest = inputs.filter((f) => !isEpub(f.name) && !(zippedEpubs.length && /\.zip$/i.test(f.name)))
+  let syllabus = ''
+  if (rest.length) {
+    try {
+      const other = await parseCourseFiles(rest, onStatus)
+      modules.push(...other.modules)
+      syllabus = other.syllabus
+      skipped += other.skipped
+      if (other.title) titles.push(other.title)
+    } catch (e) {
+      warnings.push(e instanceof Error ? e.message : 'Some files could not be read.')
+    }
+  }
+  if (!modules.length) throw new Error(warnings[0] ?? 'Could not find any readable text in those books.')
+  return { title: titles.length === 1 ? titles[0] : `${titles[0]} + ${titles.length - 1} more`, syllabus, modules, skipped, warnings }
+}
+
+async function parseCourseFiles(inputs: File[], onStatus: (s: string) => void): Promise<ParsedCourse> {
+  onStatus('Unpacking files…')
   const { files, name } = await readInputs(inputs)
-  if (!files.size) throw new Error('No readable files found. Use the Canvas course export (.imscc), a .zip, or a folder of PDFs, Word, PowerPoint or HTML files.')
+  if (!files.size) throw new Error('No readable files found. Use EPUB books, a Canvas course export (.imscc), a .zip, or a folder of PDFs, Word, PowerPoint or HTML files.')
 
   let title = name
   const settings = files.get('course_settings/course_settings.xml')
@@ -307,7 +364,7 @@ export async function parseCourse(inputs: File[], onStatus: (s: string) => void)
   for (const [folder, items] of leftovers) modules.push({ title: folder, items })
 
   if (!modules.length && !syllabus) throw new Error('Could not find any readable content in that export.')
-  return { title, syllabus, modules, skipped }
+  return { title, syllabus, modules, skipped, warnings: [] }
 }
 
 /** Join a module into note text, split into parts small enough for one AI request. */

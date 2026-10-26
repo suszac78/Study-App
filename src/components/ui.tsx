@@ -185,7 +185,7 @@ export function FileDrop({ files, onChange, label = 'Drop PDFs, photos or text f
         <div className="stack sm" style={{ alignItems: 'center' }}>
           <Upload size={22} color="var(--primary)" />
           <strong className="small">{label}</strong>
-          <span className="hint">PDF, Word, PowerPoint, photos or text · click to browse</span>
+          <span className="hint">PDF, EPUB, Word, PowerPoint, photos or text · click to browse</span>
         </div>
         <input
           ref={inputRef}

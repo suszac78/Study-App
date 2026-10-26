@@ -6,7 +6,7 @@ An AI study companion. Add your exam notification and your notes (or a whole Can
 
 - **Exam setup from the notification**: upload or paste the official notification/brochure (PDF, photos, text). The AI extracts the date, pattern, marking scheme, negative marking, important dates and a weighted syllabus.
 - **Organised notes**: paste notes or upload PDFs, Word, PowerPoint, HTML or photos of handwritten pages. You get a summary, sections, key points, definitions, formulas (with LaTeX), memory tricks, exam tips, syllabus gaps and flashcards.
-- **Whole-course import**: drop a Canvas course export (`.imscc`), any `.zip` of course files, or a folder. Modules, pages, PDFs, Word docs, slides, discussions and quiz questions are read in the browser and saved as notes per module (no AI needed). You can then organise any or all modules with AI, and use the course syllabus to fill in exam details.
+- **Whole-course import**: drop course **EPUB books** (several at once, or inside a `.zip`), a Canvas course export (`.imscc`), any `.zip` of course files, or a folder. Each EPUB chapter (from the book's table of contents) becomes its own note; DRM-locked books are detected and reported. Modules, pages, PDFs, Word docs, slides, discussions and quiz questions are read in the browser and saved as notes per module (no AI needed). You can then organise any or all modules with AI, and use the course syllabus to fill in exam details.
 - **Practice quizzes**: multiple choice, true/false and multiple-correct questions, with hints, instant feedback and an explanation for every option.
 - **Timed mock tests**: the real exam pattern, a countdown timer, question palette, flag for review, auto-submit and negative marking.
 - **Results and AI feedback**: score, accuracy by topic, a full answer review and coaching on what to fix.
@@ -50,6 +50,7 @@ src/
   lib/ai.ts          AI features (built-in Claude or API key), prompts, scoring
   lib/schemas.ts     Zod schemas for every AI output
   lib/course.ts      Canvas/IMS Common Cartridge + zip/folder reader
+  lib/epub.ts        EPUB 2/3 reader (chapters from nav/NCX table of contents)
   lib/files.ts       PDF/Word/PowerPoint/image handling for uploads
   lib/store.ts       Local database (IndexedDB) and settings
   lib/runtime.ts     Detects the claude.ai built-in Claude
