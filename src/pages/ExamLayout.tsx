@@ -1,8 +1,9 @@
 import { motion } from 'motion/react'
-import { BarChart3, BookOpen, Brain, Gauge, Layers, Lightbulb, MessageCircle, Timer } from 'lucide-react'
+import { BarChart3, BookOpen, Brain, ChevronRight, ClipboardCheck, Gauge, Layers, Lightbulb, MessageCircle, Timer } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link, NavLink, useOutletContext, useOutlet, useParams } from 'react-router-dom'
 import { Button } from '../components/ui'
+import { folderPath } from '../lib/folders'
 import { useDb } from '../lib/store'
 import type { Exam } from '../lib/types'
 import { daysUntil, examColor, formatDate } from '../lib/utils'
@@ -16,6 +17,7 @@ const TABS = [
   { to: 'tips', label: 'Tips & plan', icon: Lightbulb },
   { to: 'tutor', label: 'AI tutor', icon: MessageCircle },
   { to: 'progress', label: 'Progress', icon: BarChart3 },
+  { to: 'review', label: 'Results & review', icon: ClipboardCheck },
 ]
 
 export function useExam() {
@@ -46,6 +48,16 @@ export default function ExamLayout() {
     <div className="page">
       <div className="row between" style={{ alignItems: 'flex-end' }}>
         <div className="stack sm grow">
+          {exam.folderId && (
+            <nav className="row xs subtle" style={{ gap: 4 }} aria-label="Folder path">
+              {folderPath(db, exam.folderId).map((f, i) => (
+                <span key={f.id} className="row" style={{ gap: 4 }}>
+                  {i > 0 && <ChevronRight size={12} />}
+                  <Link to={`/folder/${f.id}`}>{f.name}</Link>
+                </span>
+              ))}
+            </nav>
+          )}
           <div className="row" style={{ gap: 8 }}>
             <span style={{ width: 10, height: 10, borderRadius: 99, background: examColor(exam.hue) }} />
             <span className="eyebrow" style={{ color: 'var(--text-3)' }}>

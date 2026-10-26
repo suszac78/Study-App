@@ -4,6 +4,8 @@ An AI study companion. Add your exam notification and your notes (or a whole Can
 
 ## Features
 
+- **Folders**: organise exams in nested folders in the sidebar, e.g. Y9 › Science › AT1, AT2. Folder pages show the assessments inside, results so far and lessons carried forward.
+- **Results & review**: after an assessment, add your mark, grade, teacher feedback and photos/PDF of the marked paper. The AI shows where marks were lost, why, habits to fix and a "next time" checklist. These lessons automatically feed quizzes, tips, the coach and the tutor for later assessments in the same subject folder, including the same subject in other years.
 - **Exam setup from the notification**: upload or paste the official notification/brochure (PDF, photos, text). The AI extracts the date, pattern, marking scheme, negative marking, important dates and a weighted syllabus.
 - **Organised notes**: paste notes or upload PDFs, Word, PowerPoint, HTML or photos of handwritten pages. You get a summary, sections, key points, definitions, formulas (with LaTeX), memory tricks, exam tips, syllabus gaps and flashcards.
 - **Whole-course import**: drop course **EPUB books** (several at once, or inside a `.zip`), a Canvas course export (`.imscc`), any `.zip` of course files, or a folder. Each EPUB chapter (from the book's table of contents) becomes its own note; DRM-locked books are detected and reported. Modules, pages, PDFs, Word docs, slides, discussions and quiz questions are read in the browser and saved as notes per module (no AI needed). You can then organise any or all modules with AI, and use the course syllabus to fill in exam details.

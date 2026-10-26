@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { ExamInfoView } from '../components/ExamInfoView'
 import { ask, AiWorking, Badge, Button, Card, ErrorAlert, FileDrop, fadeUp, stagger, staggerItem, toast, useAiTask } from '../components/ui'
 import { analyzeExam, topicStats } from '../lib/ai'
+import { folderOptions, moveExam } from '../lib/folders'
 import { updateDb, useDb } from '../lib/store'
 import { pct } from '../lib/utils'
 import { useExam } from './ExamLayout'
@@ -127,6 +128,16 @@ export default function Overview() {
               Edit name / date
             </Button>
           )}
+        </div>
+        <div className="field" style={{ maxWidth: 420 }}>
+          <label htmlFor="ed-folder">Folder</label>
+          <select id="ed-folder" className="select" value={exam.folderId ?? ''} onChange={(e) => { moveExam(exam.id, e.target.value || null); toast('Moved') }}>
+            <option value="">No folder (top level)</option>
+            {folderOptions(db).map((f) => (
+              <option key={f.id} value={f.id}>{f.label}</option>
+            ))}
+          </select>
+          <span className="hint">Put assessments in subject folders (e.g. Y9 › Science) so lessons from your results carry over to the next one.</span>
         </div>
         {editing && (
           <div className="grid grid-2">

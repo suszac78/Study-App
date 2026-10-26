@@ -3,10 +3,10 @@ import { Flower2, GraduationCap, Home, Plus, Settings as SettingsIcon } from 'lu
 import { Link, NavLink, useLocation, useOutlet } from 'react-router-dom'
 import { currentProvider } from '../lib/ai'
 import { FocusGuard } from './FocusGuard'
+import { FolderTree } from './FolderTree'
 import { StreakBadge, useMotivation } from './Motivation'
 import { useRuntime } from '../lib/runtime'
-import { useDb, useSaveError, useSettings } from '../lib/store'
-import { daysUntil, examColor } from '../lib/utils'
+import { useSaveError, useSettings } from '../lib/store'
 
 export function useAiStatus() {
   const runtime = useRuntime()
@@ -45,7 +45,6 @@ function Brand() {
 }
 
 export function Layout() {
-  const db = useDb()
   const saveError = useSaveError()
   const location = useLocation()
   const outlet = useOutlet()
@@ -68,23 +67,7 @@ export function Layout() {
             <StreakBadge days={streak.days} activeToday={streak.activeToday} />
           </NavLink>
         </nav>
-        {db.exams.length > 0 && (
-          <div>
-            <div className="nav-label">Your exams</div>
-            <nav className="nav-list">
-              {db.exams.map((e) => {
-                const d = daysUntil(e.examDate)
-                return (
-                  <NavLink key={e.id} to={`/exam/${e.id}`} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <span className="dot" style={{ background: examColor(e.hue) }} />
-                    <span className="grow">{e.name}</span>
-                    {d !== null && d >= 0 && <span className="subtle xs mono">{d}d</span>}
-                  </NavLink>
-                )
-              })}
-            </nav>
-          </div>
-        )}
+        <FolderTree />
         <div className="sidebar-foot">
           <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
             <SettingsIcon size={18} /> Settings

@@ -101,6 +101,25 @@ export const FeedbackSchema = z.object({
 })
 export type AttemptFeedback = z.infer<typeof FeedbackSchema>
 
+export const ResultAnalysisSchema = z.object({
+  headline: z.string().describe('One encouraging but honest sentence summing up the result'),
+  scoreRead: z.string().describe('What the score/grade means, e.g. "34/50 (68%), a solid B"'),
+  strengths: z.array(z.string()),
+  lostMarks: z.array(
+    z.object({
+      area: z.string().describe('Question, topic or skill'),
+      marksLost: z.string().describe('e.g. "6 marks" or "about a third of Section B"; "unknown" if not visible'),
+      why: z.string(),
+      fix: z.string().describe('Concrete thing to do differently next time'),
+    }),
+  ),
+  patterns: z.array(z.string()).describe('Recurring habits across the paper, e.g. not showing working, misreading command words'),
+  topicsToRevise: z.array(z.string()),
+  examTechnique: z.array(z.string()),
+  nextTime: z.array(z.string()).describe('Short checklist of what to do before and during the next assessment in this subject'),
+})
+export type ResultAnalysis = z.infer<typeof ResultAnalysisSchema>
+
 export const QuotesSchema = z.object({
   quotes: z.array(z.string()),
 })

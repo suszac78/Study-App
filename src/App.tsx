@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard'
 import ExamLayout from './pages/ExamLayout'
 import Flashcards from './pages/Flashcards'
 import Focus from './pages/Focus'
+import FolderPage from './pages/FolderPage'
+import Review from './pages/Review'
 import NewExam from './pages/NewExam'
 import NoteNew from './pages/NoteNew'
 import NoteView from './pages/NoteView'
@@ -48,6 +50,7 @@ export default function App() {
             <Route path="new" element={<NewExam />} />
             <Route path="settings" element={<Settings />} />
             <Route path="focus" element={<Focus />} />
+            <Route path="folder/:folderId" element={<FolderPage />} />
             <Route path="exam/:examId" element={<ExamLayout />}>
               <Route index element={<Overview />} />
               <Route path="notes" element={<NotesList />} />
@@ -62,6 +65,7 @@ export default function App() {
               <Route path="tips" element={<Tips />} />
               <Route path="tutor" element={<Tutor />} />
               <Route path="progress" element={<Progress />} />
+              <Route path="review" element={<Review />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>

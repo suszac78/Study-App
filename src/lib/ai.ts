@@ -7,7 +7,8 @@ import type {
 import { z } from 'zod/v4'
 import { filesToBlocks, filesToTextAndImages } from './files'
 import { getImageLimits, getRuntimeState, getSample } from './runtime'
-import { getSettings } from './store'
+import { relatedExams, pathLabel } from './folders'
+import { getDb, getSettings } from './store'
 import {
   ExamAnalysisSchema,
   FeedbackSchema,
@@ -15,11 +16,12 @@ import {
   OrganizedNoteSchema,
   QuizSchema,
   QuotesSchema,
+  ResultAnalysisSchema,
   TipsSchema,
   type AIQuestion,
   type ExamTips,
 } from './schemas'
-import type { Attempt, ChatMessage, Depth, Exam, Note, Quiz } from './types'
+import type { Attempt, ChatMessage, Depth, Exam, ExamResult, Note, Quiz } from './types'
 
 export class AiError extends Error {
   code: 'no-ai' | 'auth' | 'rate' | 'refusal' | 'truncated' | 'network' | 'bad-output' | 'too-large' | 'cancelled' | 'denied' | 'other'
@@ -232,6 +234,26 @@ export function examContext(exam: Exam): string {
     .join('\n')
 }
 
+/** What past assessments in the same subject taught us, for "next time" advice. */
+export function lessonsContext(exam: Exam): string {
+  const db = getDb()
+  const past = relatedExams(db, exam).filter((e) => e.result?.analysis)
+  if (!past.length) return ''
+  const lines = past.map((e) => {
+    const r = e.result!
+    const a = r.analysis!
+    return [
+      `- ${pathLabel(db, e.folderId)} › ${e.name}: ${r.score || '?'}${r.grade ? ` (${r.grade})` : ''}. ${a.headline}`,
+      a.lostMarks.length ? `  Lost marks: ${a.lostMarks.map((l) => `${l.area} (${l.marksLost}): ${l.why} → ${l.fix}`).join('; ')}` : '',
+      a.patterns.length ? `  Habits: ${a.patterns.join('; ')}` : '',
+      a.nextTime.length ? `  Next time: ${a.nextTime.join('; ')}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n')
+  })
+  return `Lessons from the student's past assessments in this subject (use them: target these weak spots and habits):\n${lines.join('\n')}`
+}
+
 function noteBody(n: Note) {
   if (!n.organized) return n.raw
   const o = n.organized
@@ -320,6 +342,8 @@ export async function generateQuiz(exam: Exam, notes: Note[], req: QuizRequest, 
       instructions: `Write exam-quality questions for this exam, in the style and level of the real paper.
 ${examContext(exam)}
 
+${lessonsContext(exam)}
+
 Student notes (primary source; also use standard syllabus knowledge for these topics):
 ${notesContext(relevant.length ? relevant : notes)}
 
@@ -359,6 +383,7 @@ Today is ${today()}.${exam.examDate ? ` The exam is on ${exam.examDate}.` : ' Th
 
 Notes covered so far: ${notes.map((n) => n.topic).join(', ') || 'none'}.
 Practice accuracy by topic: ${perf.length ? perf.map((p) => `${p.topic} ${Math.round(p.accuracy * 100)}% of ${p.total}`).join('; ') : 'no attempts yet'}.
+${lessonsContext(exam)}
 
 Rules:
 - The study plan runs from today to the exam in sensible blocks (days if under 3 weeks away, otherwise weeks), ending with revision and mock tests.
@@ -486,6 +511,8 @@ export function tutorReply(exam: Exam, notes: Note[], history: ChatMessage[], on
   const rules = chatRules(`You are chatting with a student preparing for this exam:
 ${examContext(exam)}
 
+${lessonsContext(exam)}
+
 Their notes:
 ${notesContext(notes, currentProvider() === 'claude' ? 100_000 : Infinity)}
 
@@ -526,10 +553,50 @@ Notes they have: ${notes.map((n) => `${n.title} [${n.organized ? 'organised' : '
 Practice accuracy by topic: ${perf.length ? perf.map((p) => `${p.topic} ${Math.round(p.accuracy * 100)}% of ${p.total}`).join('; ') : 'no quizzes taken yet'}.
 Recent attempts: ${attempts.slice(-5).map((a) => `${a.mode} ${a.score}/${a.maxScore}`).join('; ') || 'none'}.
 
+${lessonsContext(exam)}
+
 ${tips ? `Their current study plan and tips:\n${planText(tips)}` : 'They have not generated a study plan yet.'}
 
 Be specific to their exam, dates and scores. Keep answers practical and fairly short. When you suggest changes to their plan, say exactly what changes; the app has an "Update my plan" button that rewrites the plan using this conversation.`)
   return streamChat(rules, history, onText, signal)
+}
+
+/** Reviews a marked paper and result so the student knows what to fix next time. */
+export function analyzeResult(exam: Exam, result: Omit<ExamResult, 'analysis' | 'updatedAt' | 'sources'>, files: File[], opts?: CallOptions) {
+  const db = getDb()
+  const attempts = db.attempts.filter((a) => a.examId === exam.id)
+  const perf = topicStats(attempts, db.quizzes)
+  return generate(
+    {
+      schema: ResultAnalysisSchema,
+      instructions: `The student sat this assessment and got their result back. Review it like a sharp, kind teacher so they do better next time.
+${examContext(exam)}
+${exam.folderId ? `Folder: ${pathLabel(db, exam.folderId)}` : ''}
+Their practice accuracy before the exam: ${perf.length ? perf.map((p) => `${p.topic} ${Math.round(p.accuracy * 100)}%`).join('; ') : 'no practice data'}.
+${lessonsContext(exam)}
+
+Rules:
+- Read the marked paper carefully if attached (ticks, crosses, marks, teacher comments). Base marksLost on what you can see; say "unknown" if not visible.
+- Be specific: name questions, topics and command words. No generic advice.
+- If earlier lessons are listed above, point out which habits improved and which repeated.
+- "nextTime" is a short, practical checklist for the next assessment in this subject.`,
+      source: {
+        text: [
+          `Score: ${result.score || 'not given'}`,
+          `Grade: ${result.grade || 'not given'}`,
+          result.feedback && `Teacher feedback: ${result.feedback}`,
+          result.notes && `Student's own reflection: ${result.notes}`,
+          files.length ? 'The marked paper is attached.' : 'No paper attached.',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        files,
+      },
+      request: 'Analyse my result.',
+      maxTokens: 16000,
+    },
+    opts,
+  )
 }
 
 /** Personal motivational quotes built around what the student is working towards. */

@@ -1,4 +1,4 @@
-import type { AIQuestion, AttemptFeedback, ExamAnalysis, ExamTips, OrganizedNote } from './schemas'
+import type { AIQuestion, AttemptFeedback, ExamAnalysis, ExamTips, OrganizedNote, ResultAnalysis } from './schemas'
 
 export type ModelId = 'claude-opus-5-5' | 'claude-sonnet-5-5' | 'claude-haiku-5-5'
 export type Depth = 'quick' | 'balanced' | 'deep'
@@ -18,6 +18,27 @@ export interface Exam {
   hue: number
   info: ExamAnalysis | null
   sourceText: string
+  /** Folder it lives in (e.g. Y9 › Science); null or missing = top level. */
+  folderId?: string | null
+  result?: ExamResult | null
+}
+
+export interface Folder {
+  id: string
+  name: string
+  parentId: string | null
+  createdAt: number
+}
+
+/** The real result of a sat exam, plus the AI's review of it. */
+export interface ExamResult {
+  score: string
+  grade: string
+  feedback: string
+  notes: string
+  sources: string[]
+  analysis: ResultAnalysis | null
+  updatedAt: number
 }
 
 export interface Note {
@@ -124,6 +145,7 @@ export interface Db {
   activeFocus: ActiveFocus | null
   rewards: Rewards
   motivation: Motivation
+  folders: Folder[]
 }
 
 /** A token spent (cost 1) or a free use (cost 0) of a fun feature. */

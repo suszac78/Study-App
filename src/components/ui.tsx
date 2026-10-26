@@ -311,26 +311,40 @@ export function Toaster() {
   )
 }
 
-// ---------- Confirm dialog (in-page; browser confirm() is blocked on claude.ai) ----------
+// ---------- Confirm / text dialogs (in-page; browser confirm() and prompt() are blocked on claude.ai) ----------
 
-type AskState = { message: string; resolve: (ok: boolean) => void } | null
+type AskState = { message: string; resolve: (value: string | null) => void; input?: { value: string; placeholder: string } } | null
 let openAsk: (s: AskState) => void = () => {}
 
 export function ask(message: string): Promise<boolean> {
-  return new Promise((resolve) => openAsk({ message, resolve }))
+  return new Promise((resolve) => openAsk({ message, resolve: (v) => resolve(v !== null) }))
+}
+
+/** Asks for a line of text. Resolves null on cancel or an empty answer. */
+export function askText(message: string, initial = '', placeholder = ''): Promise<string | null> {
+  return new Promise((resolve) => openAsk({ message, resolve: (v) => resolve(v?.trim() ? v.trim() : null), input: { value: initial, placeholder } }))
 }
 
 export function ConfirmHost() {
   const [state, setState] = useState<AskState>(null)
+  const [text, setText] = useState('')
   const okRef = useRef<HTMLButtonElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
-    openAsk = setState
+    openAsk = (s) => {
+      setText(s?.input?.value ?? '')
+      setState(s)
+    }
   }, [])
   useEffect(() => {
-    if (state) okRef.current?.focus()
+    if (!state) return
+    if (state.input) {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    } else okRef.current?.focus()
   }, [state])
   const close = (ok: boolean) => {
-    state?.resolve(ok)
+    state?.resolve(ok ? (state.input ? text : '') : null)
     setState(null)
   }
   return (
@@ -344,7 +358,7 @@ export function ConfirmHost() {
           onClick={() => close(false)}
           onKeyDown={(e) => e.key === 'Escape' && close(false)}
         >
-          <motion.div
+          <motion.form
             className="card modal"
             role="alertdialog"
             aria-modal="true"
@@ -353,13 +367,30 @@ export function ConfirmHost() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8 }}
             onClick={(e) => e.stopPropagation()}
+            onSubmit={(e) => {
+              e.preventDefault()
+              close(true)
+            }}
           >
             <p id="ask-msg">{state.message}</p>
+            {state.input && (
+              <input
+                ref={inputRef}
+                id="ask-input"
+                className="input"
+                value={text}
+                placeholder={state.input.placeholder}
+                onChange={(e) => setText(e.target.value)}
+                aria-labelledby="ask-msg"
+              />
+            )}
             <div className="row" style={{ justifyContent: 'flex-end' }}>
-              <Button variant="ghost" onClick={() => close(false)}>Cancel</Button>
-              <Button ref={okRef} variant="primary" onClick={() => close(true)}>Continue</Button>
+              <Button type="button" variant="ghost" onClick={() => close(false)}>Cancel</Button>
+              <Button ref={okRef} type="submit" variant="primary" disabled={!!state.input && !text.trim()}>
+                {state.input ? 'Save' : 'Continue'}
+              </Button>
             </div>
-          </motion.div>
+          </motion.form>
         </motion.div>
       )}
     </AnimatePresence>

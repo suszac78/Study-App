@@ -852,3 +852,6 @@ a.quest:hover { text-decoration: none; background: var(--primary-soft); border-r
 .away-banner { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--warning-soft); border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent); font-size: var(--fs-sm); }
 .shred-strip { height: 10px; border-radius: 2px; background: var(--surface-2); border: 1px solid var(--border); }
 .confetti { position: fixed; top: 40%; left: 50%; width: 10px; height: 14px; border-radius: 2px; pointer-events: none; z-index: 150; }
+
+.mobile-only { display: none; }
+@media (max-width: 900px) { .mobile-only { display: block; } }

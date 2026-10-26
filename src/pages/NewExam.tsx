@@ -1,16 +1,20 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Check, PackageOpen, PencilLine, Sparkles } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ExamInfoView } from '../components/ExamInfoView'
 import { AiWorking, Button, Card, ErrorAlert, FileDrop, PageHead, fadeUp, toast, useAiTask } from '../components/ui'
 import { analyzeExam } from '../lib/ai'
 import type { ExamAnalysis } from '../lib/schemas'
-import { uid, updateDb } from '../lib/store'
+import { folderOptions } from '../lib/folders'
+import { uid, updateDb, useDb } from '../lib/store'
 import { PLACEHOLDER_EXAM_NAME } from './CourseImport'
 
 export default function NewExam() {
   const navigate = useNavigate()
+  const db = useDb()
+  const location = useLocation()
+  const [folderId, setFolderId] = useState<string>((location.state as { folderId?: string } | null)?.folderId ?? '')
   const [text, setText] = useState('')
   const [files, setFiles] = useState<File[]>([])
   const [name, setName] = useState('')
@@ -41,6 +45,7 @@ export default function NewExam() {
           hue: Math.floor(Math.random() * 360),
           info,
           sourceText: text,
+          folderId: folderId || null,
         },
       ],
     }))
@@ -52,7 +57,7 @@ export default function NewExam() {
     const id = uid()
     updateDb((d) => ({
       ...d,
-      exams: [...d.exams, { id, name: name.trim() || PLACEHOLDER_EXAM_NAME, examDate: date, createdAt: Date.now(), hue: Math.floor(Math.random() * 360), info: null, sourceText: '' }],
+      exams: [...d.exams, { id, name: name.trim() || PLACEHOLDER_EXAM_NAME, examDate: date, createdAt: Date.now(), hue: Math.floor(Math.random() * 360), info: null, sourceText: '', folderId: folderId || null }],
     }))
     navigate(`/exam/${id}/notes/import`)
   }
@@ -122,6 +127,17 @@ export default function NewExam() {
                   <input id="exam-date" type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} />
                 </div>
               </div>
+              {db.folders.length > 0 && (
+                <div className="field">
+                  <label htmlFor="exam-folder">Folder</label>
+                  <select id="exam-folder" className="select" value={folderId} onChange={(e) => setFolderId(e.target.value)}>
+                    <option value="">No folder (top level)</option>
+                    {folderOptions(db).map((f) => (
+                      <option key={f.id} value={f.id}>{f.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <FileDrop files={files} onChange={setFiles} label="Upload the exam notification / brochure / syllabus" />
               <div className="field">
                 <label htmlFor="exam-text">…or paste its text</label>

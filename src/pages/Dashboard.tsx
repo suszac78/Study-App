@@ -18,6 +18,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAiStatus } from '../components/Layout'
 import { Quests, StreakLevel } from '../components/Motivation'
 import { QuoteCard } from '../components/Quote'
+import { FolderTree } from '../components/FolderTree'
+import { pathLabel } from '../lib/folders'
 import { Badge, Button, Card, Meter, stagger, staggerItem } from '../components/ui'
 import { sameSet } from '../lib/ai'
 import { useDb } from '../lib/store'
@@ -98,6 +100,10 @@ export default function Dashboard() {
 
       <QuoteCard />
 
+      <div className="card mobile-only">
+        <FolderTree />
+      </div>
+
       <Card className="stack lg" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
         <StreakLevel />
         <hr className="divider" />
@@ -139,6 +145,7 @@ export default function Dashboard() {
                     <span className="stripe" style={{ background: `linear-gradient(90deg, ${examColor(e.hue)}, ${examColor(e.hue + 40)})` }} />
                     <div className="row between nowrap">
                       <div className="stack sm grow">
+                        {e.folderId && <span className="subtle xs">{pathLabel(db, e.folderId)}</span>}
                         <h3 style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.name}</h3>
                         <span className="subtle">{e.examDate ? formatDate(e.examDate) : 'Date not set'}</span>
                       </div>
