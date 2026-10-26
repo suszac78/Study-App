@@ -16,6 +16,7 @@ import {
   QuizSchema,
   TipsSchema,
   type AIQuestion,
+  type ExamTips,
 } from './schemas'
 import type { Attempt, ChatMessage, Depth, Exam, Note, Quiz } from './types'
 
@@ -346,7 +347,7 @@ Rules:
   return result
 }
 
-export function generateTips(exam: Exam, notes: Note[], attempts: Attempt[], quizzes: Quiz[], opts?: CallOptions) {
+export function generateTips(exam: Exam, notes: Note[], attempts: Attempt[], quizzes: Quiz[], opts?: CallOptions, coachChat: ChatMessage[] = []) {
   const perf = topicStats(attempts, quizzes)
   return generate(
     {
@@ -363,7 +364,12 @@ Rules:
 - Prioritise high-weight topics and the student's weakest topics.
 - Time management must use the real pattern (duration, question count, negative marking).
 - Be specific and practical; no generic filler.`,
-      request: 'Write my exam strategy.',
+      source: coachChat.length
+        ? { text: coachChat.slice(-20).map((m) => `${m.role === 'user' ? 'Student' : 'Coach'}: ${m.text}`).join('\n\n'), files: [] }
+        : undefined,
+      request: coachChat.length
+        ? 'Write my updated exam strategy. Apply everything the student asked for and the coach agreed to in the conversation above (time available, dates, topics to add or drop, pace).'
+        : 'Write my exam strategy.',
       maxTokens: 16000,
     },
     opts,
@@ -405,10 +411,9 @@ ${examContext(exam)}`,
   )
 }
 
-/** Streaming tutor chat with the exam and notes as context. */
-export async function tutorReply(
-  exam: Exam,
-  notes: Note[],
+/** Streaming chat: `rules` are the standing instructions, `history` the turns. */
+async function streamChat(
+  rules: string,
   history: ChatMessage[],
   onText: (text: string) => void,
   signal?: AbortSignal,
@@ -416,15 +421,6 @@ export async function tutorReply(
   const provider = currentProvider()
   if (provider === 'none') throw new AiError('no-ai', NO_AI_MESSAGE)
   const { model, depth } = getSettings()
-  const rules = `${PERSONA}
-
-You are chatting with a student preparing for this exam:
-${examContext(exam)}
-
-Their notes:
-${notesContext(notes, provider === 'claude' ? 100_000 : Infinity)}
-
-Answer clearly using markdown (bullet lists, **bold** key terms, $LaTeX$ for maths; headings only when useful). Ground answers in their notes where possible and say when you go beyond them. When asked to quiz them, ask one question at a time and wait for their answer.`
 
   if (provider === 'claude') {
     // Keep the newest turns within the text budget; the rules turn always stays.
@@ -474,6 +470,65 @@ Answer clearly using markdown (bullet lists, **bold** key terms, $LaTeX$ for mat
   } catch (err) {
     throw apiError(err)
   }
+}
+
+function chatRules(context: string) {
+  return `${PERSONA}
+
+${context}
+
+Answer clearly using markdown (bullet lists, **bold** key terms, $LaTeX$ for maths; headings only when useful).`
+}
+
+/** Streaming tutor chat with the exam and notes as context. */
+export function tutorReply(exam: Exam, notes: Note[], history: ChatMessage[], onText: (text: string) => void, signal?: AbortSignal) {
+  const rules = chatRules(`You are chatting with a student preparing for this exam:
+${examContext(exam)}
+
+Their notes:
+${notesContext(notes, currentProvider() === 'claude' ? 100_000 : Infinity)}
+
+Ground answers in their notes where possible and say when you go beyond them. When asked to quiz them, ask one question at a time and wait for their answer.`)
+  return streamChat(rules, history, onText, signal)
+}
+
+function planText(tips: ExamTips) {
+  return [
+    `Headline: ${tips.headline}`,
+    tips.overview,
+    `Priority topics: ${tips.priorityTopics.map((p) => `${p.topic} (${p.weight}): ${p.reason}`).join('; ')}`,
+    `Study plan:\n${tips.studyPlan.map((b) => `- ${b.label} [${b.focus}]: ${b.tasks.join('; ')}`).join('\n')}`,
+    `Strategies: ${tips.strategies.map((x) => `${x.title}: ${x.detail}`).join('; ')}`,
+    `Time management: ${tips.timeManagement.join('; ')}`,
+    `Common mistakes: ${tips.commonMistakes.join('; ')}`,
+    `Exam-day checklist: ${tips.examDayChecklist.join('; ')}`,
+  ].join('\n')
+}
+
+/** Streaming exam-prep coach chat about strategy, the study plan and progress. */
+export function coachReply(
+  exam: Exam,
+  notes: Note[],
+  attempts: Attempt[],
+  quizzes: Quiz[],
+  tips: ExamTips | null,
+  history: ChatMessage[],
+  onText: (text: string) => void,
+  signal?: AbortSignal,
+) {
+  const perf = topicStats(attempts, quizzes)
+  const rules = chatRules(`You are this student's exam-prep coach: strategy, planning, time management, revision technique, motivation and exam-day nerves.
+${examContext(exam)}
+Today is ${today()}.${exam.examDate ? ` The exam is on ${exam.examDate}.` : ' The exam date is not set.'}
+
+Notes they have: ${notes.map((n) => `${n.title} [${n.organized ? 'organised' : 'raw'}]`).join('; ') || 'none yet'}.
+Practice accuracy by topic: ${perf.length ? perf.map((p) => `${p.topic} ${Math.round(p.accuracy * 100)}% of ${p.total}`).join('; ') : 'no quizzes taken yet'}.
+Recent attempts: ${attempts.slice(-5).map((a) => `${a.mode} ${a.score}/${a.maxScore}`).join('; ') || 'none'}.
+
+${tips ? `Their current study plan and tips:\n${planText(tips)}` : 'They have not generated a study plan yet.'}
+
+Be specific to their exam, dates and scores. Keep answers practical and fairly short. When you suggest changes to their plan, say exactly what changes; the app has an "Update my plan" button that rewrites the plan using this conversation.`)
+  return streamChat(rules, history, onText, signal)
 }
 
 // ---------- scoring helpers (shared by UI) ----------

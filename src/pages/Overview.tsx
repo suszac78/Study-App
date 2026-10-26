@@ -57,7 +57,7 @@ export default function Overview() {
       attempts: d.attempts.filter((a) => a.examId !== exam.id),
       flashcards: d.flashcards.filter((c) => c.examId !== exam.id),
       tips: d.tips.filter((t) => t.examId !== exam.id),
-      chats: Object.fromEntries(Object.entries(d.chats).filter(([k]) => k !== exam.id)),
+      chats: Object.fromEntries(Object.entries(d.chats).filter(([k]) => k !== exam.id && !k.startsWith(`${exam.id}:`))),
     }))
     navigate('/')
   }

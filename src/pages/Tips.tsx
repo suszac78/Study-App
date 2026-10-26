@@ -1,9 +1,11 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { AlarmClock, CheckSquare, Flame, Lightbulb, RefreshCw, Sparkles, Target, TriangleAlert } from 'lucide-react'
+import { AlarmClock, CheckSquare, Flame, Lightbulb, MessagesSquare, RefreshCw, Sparkles, Target, TriangleAlert, Wand2 } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
-import { AiWorking, Badge, Button, Card, Empty, ErrorAlert, stagger, staggerItem, useAiTask } from '../components/ui'
-import { generateTips } from '../lib/ai'
+import { ChatPanel } from '../components/ChatPanel'
+import { AiWorking, Badge, Button, Card, Empty, ErrorAlert, stagger, staggerItem, toast, useAiTask } from '../components/ui'
+import { coachReply, generateTips } from '../lib/ai'
 import { updateDb, useDb } from '../lib/store'
+import type { ChatMessage } from '../lib/types'
 import { timeAgo } from '../lib/utils'
 import { useExam } from './ExamLayout'
 
@@ -28,11 +30,66 @@ export default function Tips() {
   const attempts = useMemo(() => db.attempts.filter((a) => a.examId === exam.id), [db.attempts, exam.id])
   const [done, setDone] = useState<Record<string, boolean>>({})
 
-  const make = async () => {
-    const tips = await task.run((o) => generateTips(exam, notes, attempts, db.quizzes, o))
+  const coachKey = `${exam.id}:coach`
+  const coachChat = db.chats[coachKey] ?? []
+
+  const make = async (fromChat: ChatMessage[] = []) => {
+    const tips = await task.run((o) => generateTips(exam, notes, attempts, db.quizzes, o, fromChat))
     if (!tips) return
     updateDb((d) => ({ ...d, tips: [...d.tips.filter((t) => t.examId !== exam.id), { examId: exam.id, createdAt: Date.now(), tips }] }))
+    if (fromChat.length) {
+      toast('Plan updated from your chat')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }
+
+  const coach = (
+    <Card className="stack" style={{ borderColor: 'color-mix(in srgb, var(--primary) 30%, transparent)' }}>
+      <div className="row between">
+        <div className="row nowrap" style={{ gap: 10 }}>
+          <div className="feature-icon" style={{ width: 36, height: 36, borderRadius: 11 }}>
+            <MessagesSquare size={18} />
+          </div>
+          <div className="stack sm">
+            <h3>Talk to your exam coach</h3>
+            <span className="subtle">Ask about your plan, timing, what to revise, or exam nerves. It knows your plan, notes and scores.</span>
+          </div>
+        </div>
+        {coachChat.length > 0 && (
+          <Button size="sm" variant="primary" onClick={() => make(coachChat)}>
+            <Wand2 size={14} /> Update my plan from this chat
+          </Button>
+        )}
+      </div>
+      <ChatPanel
+        chatKey={coachKey}
+        reply={(history, onText, signal) => coachReply(exam, notes, attempts, db.quizzes, entry?.tips ?? null, history, onText, signal)}
+        intro={
+          <p>
+            I'm your exam coach for <strong>{exam.name}</strong>. Tell me how much time you have, what's worrying you, or what to change in your
+            plan.
+          </p>
+        }
+        suggestions={[
+          'I only have 2 hours a day. Adjust my plan',
+          'What should I focus on this week?',
+          'How should I spend the last 3 days before the exam?',
+          'How do I handle negative marking?',
+          "I'm stressed and behind. Where do I start?",
+        ]}
+        placeholder="Ask your coach…"
+        stickyComposer={false}
+        messageActions={(m, history) => {
+          const upto = history.slice(0, history.findIndex((x) => x.id === m.id) + 1)
+          return (
+            <Button size="sm" variant="ghost" onClick={() => make(upto)}>
+              <Wand2 size={14} /> Update my plan with this
+            </Button>
+          )
+        }}
+      />
+    </Card>
+  )
 
   if (task.running) return <AiWorking title="Building your exam strategy" progress={task.progress} onStop={task.stop} />
 
@@ -43,7 +100,7 @@ export default function Tips() {
           icon={<Lightbulb size={26} />}
           title="Your exam strategy"
           action={
-            <Button variant="primary" size="lg" onClick={make}>
+            <Button variant="primary" size="lg" onClick={() => make(coachChat)}>
               <Sparkles size={18} /> Create my plan
             </Button>
           }
@@ -52,6 +109,7 @@ export default function Tips() {
           checklist. It uses your notes and quiz results, so regenerate it as you progress.
         </Empty>
         <ErrorAlert error={task.error} />
+        {coach}
       </div>
     )
   }
@@ -63,7 +121,7 @@ export default function Tips() {
         <Card className="stack" variants={staggerItem} style={{ background: 'linear-gradient(135deg, var(--primary-soft), var(--accent-soft))' }}>
           <div className="row between">
             <span className="eyebrow">Your strategy · {timeAgo(entry.createdAt)}</span>
-            <Button size="sm" variant="ghost" onClick={make}>
+            <Button size="sm" variant="ghost" onClick={() => make()}>
               <RefreshCw size={14} /> Refresh with latest progress
             </Button>
           </div>
@@ -145,6 +203,8 @@ export default function Tips() {
           <Flame size={22} color="var(--accent)" />
           <p style={{ fontStyle: 'italic' }}>{t.motivation}</p>
         </Card>
+
+        <motion.div variants={staggerItem}>{coach}</motion.div>
       </motion.div>
     </AnimatePresence>
   )
