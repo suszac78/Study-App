@@ -14,6 +14,9 @@ const fonts = grab(/<link[^>]+fonts\.(googleapis|gstatic)\.com[^>]*>/gi)
 const styles = grab(/<style[^>]*>[\s\S]*?<\/style>/gi)
 const scripts = grab(/<script[^>]*>[\s\S]*?<\/script>/gi)
 
-const out = [...title, ...metas, ...fonts, ...styles, body.replace(/<script[\s\S]*?<\/script>/gi, '').trim(), ...scripts].join('\n')
+// Literal U+FFFD characters (in library string literals) are written as the
+// equivalent \uFFFD escape so the file has no replacement characters.
+const safeScripts = scripts.map((s) => s.replace(/\uFFFD/g, '\\uFFFD'))
+const out = [...title, ...metas, ...fonts, ...styles, body.replace(/<script[\s\S]*?<\/script>/gi, '').trim(), ...safeScripts].join('\n')
 fs.writeFileSync('dist-single/studypilot.html', out)
 console.log(`dist-single/studypilot.html  ${(out.length / 1024 / 1024).toFixed(2)} MB`)
