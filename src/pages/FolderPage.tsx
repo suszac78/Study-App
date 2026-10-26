@@ -1,9 +1,10 @@
-import { motion } from 'motion/react'
-import { ChevronRight, ClipboardCheck, Folder as FolderIcon, FolderPlus, GraduationCap, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useMemo } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import { ChevronRight, ClipboardCheck, Folder as FolderIcon, FolderInput, FolderPlus, GraduationCap, ListPlus, Pencil, Plus, Trash2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { FolderPicker } from '../components/FolderPicker'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Badge, Button, Card, Empty, askText, ask, stagger, staggerItem, toast } from '../components/ui'
-import { childFolders, countExams, createFolder, deleteFolder, descendantIds, examsIn, folderPath, renameFolder } from '../lib/folders'
+import { childFolders, countExams, createFolder, deleteFolder, descendantIds, examsIn, folderPath, moveExam, moveFolder, pathLabel, renameFolder } from '../lib/folders'
 import { useDb } from '../lib/store'
 import { daysUntil, examColor, formatDate } from '../lib/utils'
 
@@ -12,6 +13,8 @@ export default function FolderPage() {
   const db = useDb()
   const navigate = useNavigate()
   const folder = db.folders.find((f) => f.id === folderId)
+  const [movingFolder, setMovingFolder] = useState(false)
+  const [adding, setAdding] = useState(false)
   const path = folderPath(db, folderId)
   const subfolders = folder ? childFolders(db, folder.id) : []
   const exams = folder ? examsIn(db, folder.id) : []
@@ -70,6 +73,7 @@ export default function FolderPage() {
           </h1>
           <div className="row">
             <Button size="sm" variant="ghost" onClick={rename}><Pencil size={14} /> Rename</Button>
+            <Button size="sm" variant="ghost" onClick={() => setMovingFolder(true)}><FolderInput size={14} /> Move folder</Button>
             <Button size="sm" variant="ghost" onClick={remove}><Trash2 size={14} /> Delete</Button>
           </div>
         </div>
@@ -82,7 +86,58 @@ export default function FolderPage() {
         <Button variant="secondary" onClick={addSub}>
           <FolderPlus size={16} /> New folder inside
         </Button>
+        {db.exams.some((e) => e.folderId !== folder.id) && (
+          <Button variant="secondary" onClick={() => setAdding(true)}>
+            <ListPlus size={16} /> Add existing exam here
+          </Button>
+        )}
       </div>
+
+      <FolderPicker
+        open={movingFolder}
+        title={`Move the "${folder.name}" folder into…`}
+        current={folder.parentId}
+        excludeFolderId={folder.id}
+        onClose={() => setMovingFolder(false)}
+        onPick={(parentId) => {
+          if (moveFolder(folder.id, parentId, db)) toast('Folder moved')
+          setMovingFolder(false)
+        }}
+      />
+
+      <AnimatePresence>
+        {adding && (
+          <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAdding(false)}>
+            <motion.div className="card modal" role="dialog" aria-modal="true" aria-label="Add an existing exam" style={{ width: 'min(480px, 100%)' }} onClick={(e) => e.stopPropagation()} initial={{ y: 16 }} animate={{ y: 0 }}>
+              <h3>Add an exam to {folder.name}</h3>
+              <div className="stack sm" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+                {db.exams
+                  .filter((e) => e.folderId !== folder.id)
+                  .map((e) => (
+                    <button
+                      key={e.id}
+                      type="button"
+                      className="nav-item"
+                      style={{ border: 0, width: '100%', textAlign: 'left', cursor: 'pointer', background: 'transparent' }}
+                      onClick={() => {
+                        moveExam(e.id, folder.id)
+                        toast(`${e.name} moved to ${folder.name}`)
+                      }}
+                    >
+                      <span className="dot" style={{ background: examColor(e.hue) }} />
+                      <span className="grow">{e.name}</span>
+                      <span className="subtle xs">{e.folderId ? pathLabel(db, e.folderId) : 'Top level'}</span>
+                    </button>
+                  ))}
+                {!db.exams.some((e) => e.folderId !== folder.id) && <p className="subtle small">All your exams are already here.</p>}
+              </div>
+              <div className="row" style={{ justifyContent: 'flex-end' }}>
+                <Button variant="primary" onClick={() => setAdding(false)}>Done</Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {subfolders.length > 0 && (
         <section className="stack">

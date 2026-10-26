@@ -4,7 +4,7 @@ An AI study companion. Add your exam notification and your notes (or a whole Can
 
 ## Features
 
-- **Folders**: organise exams in nested folders in the sidebar, e.g. Y9 › Science › AT1, AT2. Folder pages show the assessments inside, results so far and lessons carried forward.
+- **Folders**: organise exams in folders nested as deep as you like (e.g. Y9 › Science › Term 1 › AT1). Add a subfolder with the + on any folder, drag exams and folders around the sidebar, or use "Move to folder" on any exam. Folder pages show the assessments inside, results so far and lessons carried forward.
 - **Results & review**: after an assessment, add your mark, grade, teacher feedback and photos/PDF of the marked paper. The AI shows where marks were lost, why, habits to fix and a "next time" checklist. These lessons automatically feed quizzes, tips, the coach and the tutor for later assessments in the same subject folder, including the same subject in other years.
 - **Exam setup from the notification**: upload or paste the official notification/brochure (PDF, photos, text). The AI extracts the date, pattern, marking scheme, negative marking, important dates and a weighted syllabus.
 - **Organised notes**: paste notes or upload PDFs, Word, PowerPoint, HTML or photos of handwritten pages. You get a summary, sections, key points, definitions, formulas (with LaTeX), memory tricks, exam tips, syllabus gaps and flashcards.

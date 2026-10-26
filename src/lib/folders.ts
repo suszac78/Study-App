@@ -96,3 +96,10 @@ export function relatedExams(db: Db, exam: Exam): Exam[] {
   const sameSubject = new Set(db.folders.filter((f) => f.name.trim().toLowerCase() === subject).map((f) => f.id))
   return db.exams.filter((e) => e.id !== exam.id && e.folderId && sameSubject.has(e.folderId))
 }
+
+/** Moves a folder under a new parent. Refuses to move a folder into itself or its own subfolders. */
+export function moveFolder(id: string, parentId: string | null, db: Db): boolean {
+  if (parentId && descendantIds(db, id).has(parentId)) return false
+  updateDb((d) => ({ ...d, folders: d.folders.map((f) => (f.id === id ? { ...f, parentId } : f)) }))
+  return true
+}

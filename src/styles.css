@@ -855,3 +855,9 @@ a.quest:hover { text-decoration: none; background: var(--primary-soft); border-r
 
 .mobile-only { display: none; }
 @media (max-width: 900px) { .mobile-only { display: block; } }
+
+/* Folder tree: drag-and-drop target and the per-folder "+" button */
+.drop-target { background: var(--primary-soft); box-shadow: inset 0 0 0 2px var(--primary); }
+.folder-row .folder-add { opacity: 0.35; transition: opacity 0.15s; }
+.folder-row:hover .folder-add, .folder-row:focus-within .folder-add { opacity: 1; }
+@media (hover: none) { .folder-row .folder-add { opacity: 1; } }

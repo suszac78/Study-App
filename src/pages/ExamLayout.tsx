@@ -1,9 +1,10 @@
 import { motion } from 'motion/react'
-import { BarChart3, BookOpen, Brain, ChevronRight, ClipboardCheck, Gauge, Layers, Lightbulb, MessageCircle, Timer } from 'lucide-react'
-import { useMemo } from 'react'
+import { BarChart3, BookOpen, Brain, ChevronRight, ClipboardCheck, FolderInput, Gauge, Layers, Lightbulb, MessageCircle, Timer } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { Link, NavLink, useOutletContext, useOutlet, useParams } from 'react-router-dom'
-import { Button } from '../components/ui'
-import { folderPath } from '../lib/folders'
+import { FolderPicker } from '../components/FolderPicker'
+import { Button, toast } from '../components/ui'
+import { folderPath, moveExam, pathLabel } from '../lib/folders'
 import { useDb } from '../lib/store'
 import type { Exam } from '../lib/types'
 import { daysUntil, examColor, formatDate } from '../lib/utils'
@@ -27,6 +28,7 @@ export function useExam() {
 export default function ExamLayout() {
   const { examId } = useParams()
   const db = useDb()
+  const [moving, setMoving] = useState(false)
   const outlet = useOutlet(useMemo(() => ({ exam: db.exams.find((e) => e.id === examId) }), [db.exams, examId]))
   const exam = db.exams.find((e) => e.id === examId)
 
@@ -65,6 +67,11 @@ export default function ExamLayout() {
             </span>
           </div>
           <h1>{exam.name}</h1>
+          <div>
+            <Button size="sm" variant="ghost" onClick={() => setMoving(true)} style={{ marginLeft: -8 }}>
+              <FolderInput size={14} /> {exam.folderId ? `In ${pathLabel(db, exam.folderId)} · Move` : 'Move to folder'}
+            </Button>
+          </div>
         </div>
         {d !== null && d >= 0 && (
           <motion.div className="countdown" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
@@ -73,6 +80,18 @@ export default function ExamLayout() {
           </motion.div>
         )}
       </div>
+
+      <FolderPicker
+        open={moving}
+        title={`Move "${exam.name}" to…`}
+        current={exam.folderId ?? null}
+        onClose={() => setMoving(false)}
+        onPick={(folderId) => {
+          moveExam(exam.id, folderId)
+          setMoving(false)
+          toast(folderId ? `Moved to ${pathLabel(db, folderId) || 'folder'}` : 'Moved to top level')
+        }}
+      />
 
       <nav className="tabs" aria-label="Exam sections">
         {TABS.map((t) => (
