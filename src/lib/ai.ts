@@ -6,7 +6,7 @@ import type {
 } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import { z } from 'zod/v4'
 import { filesToBlocks, filesToTextAndImages } from './files'
-import { getImageLimits, getRuntimeState, getSample } from './runtime'
+import { getImageLimits, getRuntimeState, getSample, inViewer, samplePermission } from './runtime'
 import { relatedExams, pathLabel } from './folders'
 import { getDb, getSettings } from './store'
 import {
@@ -102,10 +102,12 @@ function sampleError(err: unknown): AiError {
     case 'cancelled':
       return new AiError('cancelled', 'Stopped.')
     case 'not_granted':
+      return new AiError('denied', 'Claude access was not allowed for this page. Go to Settings → Check AI and use Open permissions, or reload and choose Allow.')
     case 'sampling_disabled':
+      return new AiError('denied', "Claude isn't available to this page on your account (account or organisation settings). Settings → Check AI explains more.")
     case 'not_declared':
     case 'capability_disabled':
-      return new AiError('denied', 'Claude access was not allowed for this page. Reload and choose Allow to use the AI.')
+      return new AiError('denied', "The built-in AI can't run in this view. Reload the page; Settings → Check AI explains more.")
     case 'rate_limited':
       return new AiError('rate', 'You have hit a Claude usage limit. Try again a little later.')
     case 'session_expired':
@@ -122,6 +124,60 @@ function sampleError(err: unknown): AiError {
       return new AiError('other', 'One of the images could not be used. Try a JPG or PNG, or paste the text instead.')
     default:
       return new AiError('other', (err as SampleErr)?.message || (err instanceof Error ? err.message : 'Something went wrong. Please try again.'))
+  }
+}
+
+// ---------- diagnosis ----------
+
+export interface AiCheck {
+  ok: boolean
+  title: string
+  detail: string
+  fix?: 'permissions' | 'reload'
+}
+
+/** Works out exactly why the AI does or doesn't work for this viewer, with one tiny test call. */
+export async function checkAi(): Promise<AiCheck> {
+  const provider = currentProvider()
+  if (provider === 'api') return { ok: true, title: 'Using your API key', detail: 'AI requests go to Anthropic with the key saved in this browser.' }
+  if (!inViewer) {
+    return {
+      ok: false,
+      title: 'Not opened inside claude.ai',
+      detail:
+        "The built-in AI only works when StudyPilot is opened from its claude.ai link while signed in. Opening the page's own address directly, a saved copy, or another website won't connect it. (Or add an API key below.)",
+    }
+  }
+  if (getRuntimeState() === 'checking') return { ok: false, title: 'Still connecting', detail: 'Give it a few seconds, then check again.', fix: 'reload' }
+  if (provider === 'none') {
+    return {
+      ok: false,
+      title: "This claude.ai view can't use Claude",
+      detail:
+        "Usually this means you're not signed in to claude.ai, you opened a public link without signing in, or your account can't use this feature. Sign in to claude.ai with your own account, then open the link again.",
+      fix: 'reload',
+    }
+  }
+  if ((await samplePermission()) === 'denied') {
+    return { ok: false, title: 'Claude access is turned off for this page', detail: 'You chose not to allow it. Open permissions and switch Claude on, or reload and choose Allow.', fix: 'permissions' }
+  }
+  try {
+    await getSample()!('Reply with exactly the word OK.', { modelTier: 'quick', cache: false })
+    return { ok: true, title: 'Built-in AI is working', detail: 'AI features run on your own Claude plan. Each one counts toward your usage limits.' }
+  } catch (err) {
+    const code = (err as SampleErr)?.code
+    if (code === 'not_granted')
+      return { ok: false, title: 'Claude access was not allowed', detail: 'Open permissions and switch Claude on for StudyPilot, or reload and choose Allow when asked.', fix: 'permissions' }
+    if (code === 'sampling_disabled')
+      return {
+        ok: false,
+        title: "Claude isn't available to pages on this account",
+        detail:
+          "Your Claude account or organisation doesn't allow artifact pages to use Claude (for example a school or work account with this turned off). Try a personal Claude account, or ask whoever manages the account.",
+      }
+    if (code === 'rate_limited') return { ok: false, title: 'Usage limit reached', detail: "Your Claude plan's usage limit is used up for now. It resets after a while." }
+    if (code === 'session_expired') return { ok: false, title: 'Signed out', detail: 'Sign in to claude.ai again, then reload this page.', fix: 'reload' }
+    return { ok: false, title: 'The test request failed', detail: (err as SampleErr)?.message || 'Try again in a minute.', fix: 'reload' }
   }
 }
 

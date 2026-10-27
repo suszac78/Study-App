@@ -21,6 +21,15 @@ interface SampleFn {
 interface DownloadsNs {
   save(file: { filename: string; data: string | Blob }): Promise<unknown>
 }
+type PermissionState = 'granted' | 'prompt' | 'denied' | 'unavailable'
+interface PermissionsNs {
+  state(name: string): Promise<PermissionState>
+  manage(): Promise<void>
+}
 interface Window {
-  claude?: { use(name: 'sample'): Promise<SampleFn | null>; use(name: 'downloads'): Promise<DownloadsNs | null> }
+  claude?: {
+    use(name: 'sample'): Promise<SampleFn | null>
+    use(name: 'downloads'): Promise<DownloadsNs | null>
+    use(name: 'permissions'): Promise<PermissionsNs | null>
+  }
 }

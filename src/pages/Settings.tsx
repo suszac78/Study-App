@@ -1,7 +1,9 @@
-import { Download, Eye, EyeOff, KeyRound, Monitor, Moon, Sparkles, Sun, Trash2, Upload } from 'lucide-react'
+import { Download, Eye, EyeOff, KeyRound, Monitor, Moon, Sparkles, Stethoscope, Sun, Trash2, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useAiStatus } from '../components/Layout'
 import { MotivationSettings } from '../components/MotivationSettings'
+import { checkAi, type AiCheck } from '../lib/ai'
+import { openPermissions } from '../lib/runtime'
 import { Button, Card, PageHead, ask, toast } from '../components/ui'
 import { getDownloads } from '../lib/runtime'
 import { getDb, replaceDb, resetDb, updateSettings, useSettings } from '../lib/store'
@@ -18,6 +20,51 @@ const MODELS: { id: ModelId; label: string }[] = [
   { id: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5 (faster, cheaper)' },
   { id: 'claude-haiku-5-5', label: 'Claude Haiku 5.5 (fastest, cheapest)' },
 ]
+
+/** "Check AI": tests the connection and says exactly what's wrong and how to fix it. */
+function AiCheckPanel() {
+  const [checking, setChecking] = useState(false)
+  const [result, setResult] = useState<AiCheck | null>(null)
+  const run = async () => {
+    setChecking(true)
+    setResult(await checkAi())
+    setChecking(false)
+  }
+  return (
+    <div className="stack sm">
+      <div>
+        <Button variant="secondary" size="sm" disabled={checking} onClick={run}>
+          <Stethoscope size={14} /> {checking ? 'Checking…' : 'Check AI'}
+        </Button>
+      </div>
+      {result && (
+        <div className={`alert ${result.ok ? 'info' : 'warn'}`} role="status">
+          <span className="stack sm">
+            <strong>{result.ok ? '✓ ' : ''}{result.title}</strong>
+            <span>{result.detail}</span>
+            {result.fix && (
+              <span className="row">
+                {result.fix === 'permissions' && (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={async () => {
+                      if (!(await openPermissions())) toast('Use the Permissions option in the artifact menu at the top of the page')
+                      run()
+                    }}
+                  >
+                    Open permissions
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={() => window.location.reload()}>Reload page</Button>
+              </span>
+            )}
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function Settings() {
   const settings = useSettings()
@@ -72,6 +119,8 @@ export default function Settings() {
             </span>
           </div>
         </div>
+
+        <AiCheckPanel />
 
         {provider === 'claude' ? (
           <div className="alert info">

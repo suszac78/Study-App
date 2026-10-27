@@ -5,7 +5,9 @@ import { useSyncExternalStore } from 'react'
 
 export type RuntimeState = 'checking' | 'ready' | 'absent'
 
-let state: RuntimeState = typeof window !== 'undefined' && window.claude?.use ? 'checking' : 'absent'
+/** True when the page is running inside a claude.ai viewer at all. */
+export const inViewer = typeof window !== 'undefined' && !!window.claude?.use
+let state: RuntimeState = inViewer ? 'checking' : 'absent'
 let sampleFn: SampleFn | null = null
 let downloads: DownloadsNs | null = null
 let imageLimits: { maxCount: number; mediaTypes: string[] } | null = null
@@ -26,6 +28,28 @@ if (state === 'checking') {
     })
     .finally(() => listeners.forEach((l) => l()))
   window.claude!.use('downloads').then((d) => (downloads = d)).catch(() => {})
+}
+
+/** Whether this viewer allowed the page to use Claude ('denied' = they chose not to). */
+export async function samplePermission(): Promise<PermissionState | 'unknown'> {
+  try {
+    const p = await window.claude?.use('permissions')
+    return p ? await p.state('sample') : 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
+
+/** Opens claude.ai's Permissions panel for this page. Returns false if it couldn't. */
+export async function openPermissions(): Promise<boolean> {
+  try {
+    const p = await window.claude?.use('permissions')
+    if (!p) return false
+    await p.manage()
+    return true
+  } catch {
+    return false
+  }
 }
 
 export const getSample = () => sampleFn

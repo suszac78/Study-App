@@ -121,8 +121,8 @@ export default function Dashboard() {
       {provider === 'none' && (
         <div className="alert warn">
           <span>
-            AI is not connected here. Open StudyPilot from its claude.ai link to use the built-in Claude (no key needed), or add
-            an API key in <Link to="/settings">Settings</Link>.
+            AI isn't connected. Make sure you're signed in to claude.ai with your own account, then reload. Still stuck? Press{' '}
+            <Link to="/settings">Settings → Check AI</Link> to see exactly why.
           </span>
         </div>
       )}
